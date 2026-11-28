@@ -10,11 +10,14 @@ def generate_thread_id():
     return str(uuid.uuid4())
 
 
-#add a new thread id to the conversation list
+#add a new thread id to the conversation list 
 def add_thread(thread_id):
     #prevent the same thread from being added multiple times
     if thread_id not in st.session_state["chat_threads"]:
         st.session_state["chat_threads"].append(thread_id)
+    #assigning a default title whenever a new thread is created.
+    st.session_state["thread_titles"].setdefault(thread_id,"New Chat")
+
 
 # Create a complete new chat conversation
 def reset_chat():
@@ -58,8 +61,15 @@ if "thread_id" not in st.session_state:
 if "chat_threads" not in st.session_state:
     st.session_state["chat_threads"] = []
 
+#creating a dictionary to store all the thread titles
+
+if "thread_titles" not in st.session_state:
+    st.session_state["thread_titles"] = {}
+
 #add current thread to the conversation list
 add_thread(st.session_state["thread_id"])
+
+
 
 #               SIDEBAR FEATURE
 
@@ -68,7 +78,7 @@ st.sidebar.title("My Conversations")
 
 # create a button for starting a new conversation
 
-if st.sidebar.button("New Chat"):
+if st.sidebar.button("+ Create New Chat"):
 
     #Reset the current chat and create a new thread
     reset_chat()
@@ -81,9 +91,10 @@ if st.sidebar.button("New Chat"):
 #This shows the newest conversation first
 
 for thread_id in st.session_state["chat_threads"][::-1]:
+    title = st.session_state["thread_titles"].get(thread_id,"New Chat")
     # create one sidebar button fro every conversation
     if st.sidebar.button(
-        str(thread_id),
+        title,
         key=thread_id
     ):
         #set the selected thread as the current thread
@@ -140,6 +151,18 @@ user_input = st.chat_input("Type here")
 #Run this block after the user submits a message
 
 if user_input:
+
+    #Generating a title from user's first message
+    thread_id = st.session_state["thread_id"]
+    #Assign title only for the first message
+    if not st.session_state["message_history"]:
+
+        title = user_input[:35]
+
+        if len(user_input)>35:
+            title+="..."
+
+        st.session_state["thread_titles"][thread_id]=title    
 
     # Save the user's message in streamlit session state
     st.session_state["message_history"].append({
